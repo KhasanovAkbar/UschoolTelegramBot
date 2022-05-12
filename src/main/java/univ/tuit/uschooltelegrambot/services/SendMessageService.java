@@ -125,7 +125,7 @@ public class SendMessageService implements SendMessageImpl<Message> {
 
 
             SendMessage sm = new SendMessage();
-            var row1 = new KeyboardRow();
+            KeyboardRow row1 = new KeyboardRow();
             row1.add("Yes");
             row1.add(KeyboardButton.builder().text("No").build());
             keyboardRow.add(row1);
