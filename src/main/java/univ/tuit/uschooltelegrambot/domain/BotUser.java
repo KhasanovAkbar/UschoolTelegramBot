@@ -11,68 +11,26 @@ import javax.persistence.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "botUser")
 public class BotUser {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_sequence")
-    private Integer id;
 
     private Long userId;
 
     private String username;
 
-    private String name = "Register1";
+    private String name ;
 
-    private boolean isName = false;
+    private String surname;
 
-    private String surname = "Register";
+    private String age ;
 
-    private boolean isSurname = false;
+    private String phoneNumber ;
 
-    private String age = "Register";
+    private String state; // it saves button state
 
-    private boolean isAge = false;
+    private String status; //it saves this user fully register or not
 
-    private String phoneNumber = "Register";
-
-    private boolean isPhoneNumber = true;
-
-    private String state;
+    private String userStateLayer; //it saves user register layer
 
     private String registrationTime;
 
-    public boolean isName() {
-        return isName;
-    }
-
-    public void setIsName(boolean name) {
-        isName = name;
-    }
-
-    public boolean isSurname() {
-        return isSurname;
-    }
-
-    public void setIsSurname(boolean surname) {
-        isSurname = surname;
-    }
-
-    public boolean isAge() {
-        return isAge;
-    }
-
-    public void setIsAge(boolean age) {
-        isAge = age;
-    }
-
-    public boolean isPhoneNumber() {
-        return isPhoneNumber;
-    }
-
-    public void setIsPhoneNumber(boolean phoneNumber) {
-        isPhoneNumber = phoneNumber;
-    }
 }

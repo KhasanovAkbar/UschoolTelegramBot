@@ -2,11 +2,9 @@ package univ.tuit.uschooltelegrambot.services;
 
 public interface SendMessageImpl<T> {
 
-    void start(T t);
+    void start(T t, boolean check);
 
     void register(T t);
-
-    void registerUser(T t, Integer sequence);
 
     void aboutUs(T t);
 
@@ -19,4 +17,6 @@ public interface SendMessageImpl<T> {
     void location(T t);
 
     void others(T t);
+
+    void listUser(T t);
 }

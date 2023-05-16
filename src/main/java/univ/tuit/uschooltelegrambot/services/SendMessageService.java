@@ -1,126 +1,168 @@
 package univ.tuit.uschooltelegrambot.services;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendLocation;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
-import univ.tuit.uschooltelegrambot.cache.Cache;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import univ.tuit.uschooltelegrambot.BotMain;
+import univ.tuit.uschooltelegrambot.constants.ButtonState;
+import univ.tuit.uschooltelegrambot.constants.UserStateLayer;
 import univ.tuit.uschooltelegrambot.domain.BotUser;
-import univ.tuit.uschooltelegrambot.domain.CompletedUser;
-import univ.tuit.uschooltelegrambot.domain.State;
-import univ.tuit.uschooltelegrambot.domain.Status;
+import univ.tuit.uschooltelegrambot.store.BotUserStore;
+import univ.tuit.uschooltelegrambot.constants.Status;
 import univ.tuit.uschooltelegrambot.messageSender.MessageSender;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class SendMessageService implements SendMessageImpl<Message> {
 
+    private final BotMain botMain;
+
     private final MessageSender messageSender;
-    private final Cache<BotUser> cache;
-    private final Cache<CompletedUser> completedUserCache;
+    private final BotUserStore<BotUser> botUserStore;
 
-    static BotUser user = new BotUser();
+    private Long userId;
+    private final BotUser user = new BotUser();
 
-    public static void info(Message message, long user_id) {
-        String username = message.getFrom().getUserName();
+    @Value("${channel.id}")
+    private String channelId;
 
-        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date date = new Date();
-        String format = dateFormat.format(date);
-
-        user.setUserId(user_id);
-        user.setUsername(username);
-        user.setState(State.NONE.toString());
-        user.setRegistrationTime(format);
-    }
-
-
-    public SendMessageService(MessageSender messageSender, Cache<BotUser> cache, Cache<CompletedUser> completedUserCache) {
+    public SendMessageService(BotMain botMain, MessageSender messageSender, BotUserStore<BotUser> botUserStore) {
+        this.botMain = botMain;
         this.messageSender = messageSender;
-        this.cache = cache;
-        this.completedUserCache = completedUserCache;
+        this.botUserStore = botUserStore;
     }
 
     ReplyKeyboardMarkup markup = new ReplyKeyboardMarkup();
     ArrayList<KeyboardRow> keyboardRow = new ArrayList<>();
 
+
     @Override
-    public void start(Message message) {
+    public void start(Message message, boolean channelCheck) {
 
+        userId = message.getChatId();
         SendMessage sendMessage = new SendMessage();
-        sendMessage.setText("Hello " + message.getFrom().getFirstName() + "\nWelcome Uschool learning center official bot");
-        sendMessage.setChatId(String.valueOf(message.getChatId()));
-        keyboardRow.clear();
-        sendMessage.setReplyMarkup(buttons());
-        messageSender.sendMessage(sendMessage);
-    }
 
+        keyboardRow.clear();
+
+        user.setUserId(userId);
+        String username = message.getFrom().getUserName();
+        user.setUsername(username);
+        user.setState(ButtonState.START);
+        botUserStore.add(user);
+        sendMessage.setReplyMarkup(null);
+
+        if (user.getName() == null && channelCheck) {
+            sendMessage.setText("Hello " + message.getFrom().getFirstName() +
+                    "\nWelcome Uschool learning center official bot");
+        }
+
+        if (channelCheck) {
+
+            DeleteMessage deleteMessage = new DeleteMessage(userId.toString(), message.getMessageId());
+            try {
+                botMain.execute(deleteMessage);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+            sendMessage.setReplyMarkup(buttons());
+
+
+        } else {
+            InlineKeyboardButton button1 = new InlineKeyboardButton();
+            InlineKeyboardButton button2 = new InlineKeyboardButton();
+            button1.setText("Subscribe");
+            button1.setUrl("https://t.me/JavohirsNotes");
+            button1.setCallbackData("/Subscribe");
+
+            button2.setText("Check subscription✅");
+            button2.setCallbackData("/check");
+
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button1);
+            row.add(button2);
+            markup.setKeyboard(Collections.singletonList(row));
+            keyboardRow.clear();
+
+            sendMessage.setText("Botdan foydalanish uchun kanalga a'zo bo'ling");
+            sendMessage.setReplyMarkup(markup);
+
+        }
+        sendMessage.setChatId(userId.toString());
+        messageSender.sendMessage(sendMessage);
+
+    }
 
     @Override
     public void register(Message message) {
-        long chat_id = message.getChatId();
+        userId = message.getChatId();
+        BotUser byUserId = botUserStore.findBy(userId);
+        if (message.getText().equals(ButtonState.REGISTER)) {
 
-        info(message, chat_id);
-        BotUser add = cache.add(user);
-        BotUser byUserId = cache.findBy(chat_id, add.getId());
+            DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            Date date = new Date();
+            String format = dateFormat.format(date);
 
-        messageSender.sendMessage(SendMessage
-                .builder().text("Name")
-                .chatId(String.valueOf(chat_id))
-                .build());
-        byUserId.setName(message.getText());
-        byUserId.setIsName(true);
-        cache.update(byUserId);
-    }
+            byUserId.setRegistrationTime(format);
+            sendMsg("Name", userId.toString());
 
-    @Override
-    public void registerUser(Message message, Integer sequence) {
+            byUserId.setName(message.getText());
+            byUserId.setState(ButtonState.REGISTER);
+            byUserId.setUserStateLayer(UserStateLayer.NAME);
+            botUserStore.add(byUserId);
 
-        long chat_id = message.getChatId();
-        BotUser byUserId = cache.findBy(chat_id, sequence);
-        if (byUserId.getSurname().equals("Register") && byUserId.isName()) {
-            messageSender.sendMessage(SendMessage
-                    .builder().text("Surname")
-                    .chatId(String.valueOf(chat_id))
-                    .build());
+        } else if (byUserId.getUserStateLayer().equals(UserStateLayer.NAME)) {
+
+            sendMsg("Surname", userId.toString());
             byUserId.setName(message.getText());
             byUserId.setSurname(message.getText());
-            byUserId.setIsSurname(true);
+            byUserId.setUserStateLayer(UserStateLayer.SURNAME);
+            botUserStore.add(byUserId);
+        } else if (byUserId.getUserStateLayer().equals(UserStateLayer.SURNAME)) {
 
-        } else if (byUserId.getAge().equals("Register") && byUserId.isSurname()) {
-            messageSender.sendMessage(SendMessage.builder()
-                    .text("Age")
-                    .chatId(String.valueOf(chat_id))
-                    .build());
+            sendMsg("Age", userId.toString());
             byUserId.setSurname(message.getText());
             byUserId.setAge(message.getText());
-            byUserId.setIsAge(true);
+            byUserId.setUserStateLayer(UserStateLayer.AGE);
+            botUserStore.add(byUserId);
 
-        } else if (byUserId.getPhoneNumber().equals("Register") && byUserId.isAge()) {
-            messageSender.sendMessage(SendMessage.builder()
-                    .text("Phone number")
-                    .chatId(String.valueOf(chat_id)
-                    ).build());
+        } else if (byUserId.getUserStateLayer().equals(UserStateLayer.AGE)) {
+
+            sendMsg("Phone number", userId.toString());
             byUserId.setAge(message.getText());
             byUserId.setPhoneNumber(message.getText());
-        } else if (byUserId.getState().equals("NONE") && byUserId.isAge()) {
+            byUserId.setUserStateLayer(UserStateLayer.PHONE_NUMBER);
+            botUserStore.add(byUserId);
+
+        } else if (byUserId.getUserStateLayer().equals(UserStateLayer.PHONE_NUMBER)) {
+
+            byUserId.setPhoneNumber(message.getText());
 
             markup = new ReplyKeyboardMarkup();
             keyboardRow = new ArrayList<>();
-            byUserId.setPhoneNumber(message.getText());
+            String username;
+            username = (byUserId.getUsername() == null) ? "" : "\n<b>username: </b>" + "@" + byUserId.getUsername();
             messageSender.sendMessage(SendMessage.builder().text("<b>FISH: </b>" + byUserId.getName() + " " + byUserId.getSurname() +
-                            "\n<b>username: </b>" + "@" + byUserId.getUsername() +
+                            username +
                             "\n<b>Phone number: </b>" + byUserId.getPhoneNumber() +
                             "\n<b>Age: </b>" + byUserId.getAge())
                     .parseMode("HTML")
-                    .chatId(String.valueOf(message.getChatId()))
+                    .chatId(userId.toString())
                     .build());
 
 
@@ -132,43 +174,45 @@ public class SendMessageService implements SendMessageImpl<Message> {
             markup.setKeyboard(keyboardRow);
             markup.setOneTimeKeyboard(true);
             markup.setResizeKeyboard(true);
+
             sm.setText("Is information correct?");
             sm.setChatId(String.valueOf(message.getChatId()));
             sm.setReplyMarkup(markup);
             messageSender.sendMessage(sm);
-            byUserId.setState(State.CHECKED.toString());
+            byUserId.setStatus(Status.CHECKED.name());
+            byUserId.setUserStateLayer(UserStateLayer.NONE);
+            botUserStore.add(byUserId);
 
-        } else if (message.getText().equals("Yes") && byUserId.getState().equals(State.CHECKED.toString())) {
+
+        } else if (message.getText().equals("Yes") &&
+                byUserId.getStatus().equals(Status.CHECKED.toString()) &&
+                byUserId.getUserStateLayer().equals(UserStateLayer.NONE)) {
             SendMessage sm = new SendMessage();
             sm.setText("Your data sent to admin" +
                     "\n<b>Thank you for registration</b>");
             sm.setParseMode("HTML");
-            sm.setChatId(String.valueOf(message.getChatId()));
-            byUserId.setState(State.COMPLETED.toString());
-            byUserId.setIsPhoneNumber(true);
+
+            sm.setChatId(userId.toString());
+            byUserId.setStatus(Status.COMPLETED.name());
+
             keyboardRow.clear();
             sm.setReplyMarkup(buttons());
             messageSender.sendMessage(sm);
-
-            completedUserCache.add(copyProperties(byUserId));
-
-        } else if (message.getText().equals("No") && byUserId.getState().equals(State.CHECKED.toString())) {
+            botUserStore.add(byUserId);
+        } else if (message.getText().equals("No") &&
+                byUserId.getStatus().equals(Status.CHECKED.toString()) &&
+                byUserId.getUserStateLayer().equals(UserStateLayer.NONE)) {
             SendMessage sm = new SendMessage();
             sm.setText("Your data denied " +
                     "\nClick /start. The announcement will start again");
-            sm.setChatId(String.valueOf(message.getChatId()));
-            byUserId.setState(State.DENIED.toString());
-            byUserId.setIsName(false);
-            byUserId.setIsSurname(false);
-            byUserId.setIsAge(false);
-            byUserId.setIsPhoneNumber(false);
+            sm.setChatId(userId.toString());
+            byUserId.setState(Status.DENIED.name());
             keyboardRow.clear();
             sm.setReplyMarkup(buttons());
             messageSender.sendMessage(sm);
+            botUserStore.add(byUserId);
+
         } else others(message);
-        cache.update(byUserId);
-
-
     }
 
 
@@ -180,28 +224,12 @@ public class SendMessageService implements SendMessageImpl<Message> {
                 .text("About")
                 .chatId(String.valueOf(chat_id))
                 .build());
-       /* SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(String.valueOf(message.getChatId()));
-        sendMessage.setText("O‘t to‘la nigohim boqqanlarimni, \n" +
-                "O‘zimga aytolmas yoqqanlarimni, \n" +
-                "Yodidan chiqarmas raqamlarimni, \n" +
-                "Qalaysiz men sevsam sevmagan qizlar.");
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
-        keyboard.add(Collections.singletonList(
-                InlineKeyboardButton.builder()
-                        .text("Yangi She'r")
-                        .callbackData("next_poem")
-                        .build()));
-        inlineKeyboardMarkup.setKeyboard(keyboard);
-        sendMessage.setReplyMarkup(inlineKeyboardMarkup);
-        messageSender.sendMessage(sendMessage);*/
     }
 
     @Override
     public void restart(Message message) {
         //delete from db
-        start(message);
+        start(message, false);
 
     }
 
@@ -252,6 +280,33 @@ public class SendMessageService implements SendMessageImpl<Message> {
         messageSender.sendMessage(sm);
     }
 
+    @Override
+    public void listUser(Message message) {
+
+        List<BotUser> all = botUserStore.getAll();
+        for (BotUser byUserId : all) {
+            if (byUserId.getStatus().equals(Status.COMPLETED.name())) {
+                String username = (byUserId.getUsername() == null) ? "" : "\n<b>username: </b>" + "@" + byUserId.getUsername();
+                messageSender.sendMessage(SendMessage.builder().text("<b>FISH: </b>" + byUserId.getName() + " " + byUserId.getSurname() +
+                                username +
+                                "\n<b>Phone number: </b>" + byUserId.getPhoneNumber() +
+                                "\n<b>Age: </b>" + byUserId.getAge() +
+                                "\n<b>Registered: </b>" + byUserId.getRegistrationTime())
+                        .parseMode("HTML")
+                        .chatId(String.valueOf(message.getChatId()))
+                        .build());
+            }
+        }
+    }
+
+    private void sendMsg(String text, String id) {
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(id);
+        sendMessage.setText(text);
+        messageSender.sendMessage(sendMessage);
+
+    }
+
     private ReplyKeyboardMarkup buttons() {
 
         KeyboardRow row1 = new KeyboardRow();
@@ -275,19 +330,5 @@ public class SendMessageService implements SendMessageImpl<Message> {
         markup.setOneTimeKeyboard(true);
 
         return markup;
-    }
-
-    private CompletedUser copyProperties(BotUser botUser) {
-        CompletedUser cu = new CompletedUser();
-
-        cu.setUserId(botUser.getUserId());
-        cu.setUsername(botUser.getUsername());
-        cu.setAge(botUser.getAge());
-        cu.setName(botUser.getName());
-        cu.setSurname(botUser.getSurname());
-        cu.setPhoneNumber(botUser.getPhoneNumber());
-        cu.setRegistrationTime(botUser.getRegistrationTime());
-        cu.setStatus(Status.NEW.name());
-        return cu;
     }
 }
