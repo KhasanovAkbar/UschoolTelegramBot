@@ -23,7 +23,7 @@ public class BotMain extends TelegramLongPollingBot {
 
     private Long userId;
 
-    private String channelId = "@JavohirsNotes";
+    private String channelId = "@kinoman_uzbek";
 
     @Autowired
     private Processor processor;
@@ -45,10 +45,17 @@ public class BotMain extends TelegramLongPollingBot {
 
         } else if (update.hasCallbackQuery()) {
             userId = update.getCallbackQuery().getFrom().getId();
-
         }
-        boolean isSubscribed = isUserSubscribed(userId, channelId);
-        processor.processor(update, isSubscribed);
+        String userSubscribed = isUserSubscribed(userId, channelId);
+
+        try {
+            processor.processor(update, userSubscribed);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+
 
 
      /*   SendMessage message = new SendMessage();
@@ -62,16 +69,19 @@ public class BotMain extends TelegramLongPollingBot {
 
     }
 
-    public boolean isUserSubscribed(Long userId, String channelId) {
+    public String isUserSubscribed(Long userId, String channelId) {
+        String status = "";
         try {
             GetChatMember getChatMember = new GetChatMember(channelId, userId);
             ChatMember chatMember = execute(getChatMember);
-            String status = chatMember.getStatus();
-            return status.equals("member") || status.equals("administrator") || status.equals("creator");
+            status = chatMember.getStatus();
+
         } catch (TelegramApiException e) {
+            // Log error message and stack trace
+            System.err.println("Telegram API request failed: " + e.getMessage());
             e.printStackTrace();
-            return false;
         }
+        return status;
     }
 }
 

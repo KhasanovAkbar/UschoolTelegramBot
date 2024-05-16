@@ -18,13 +18,13 @@ public class DefaultProcessor implements Processor {
     }
 
     @Override
-    public void executeQuery(Message message, boolean channelCheck) {
-        messageHandler.choose(message, channelCheck);
+    public void executeQuery(Message message, String status) throws Exception {
+        messageHandler.choose(message, status);
 
     }
 
     @Override
-    public void executeCallBackQuery(CallbackQuery callbackQuery, boolean channelCheck) {
-        callBackQueryHandler.choose(callbackQuery, channelCheck);
+    public void executeCallBackQuery(CallbackQuery callbackQuery, String status) {
+        callBackQueryHandler.choose(callbackQuery, status);
     }
 }

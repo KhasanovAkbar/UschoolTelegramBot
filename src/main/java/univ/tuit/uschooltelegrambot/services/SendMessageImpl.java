@@ -2,21 +2,12 @@ package univ.tuit.uschooltelegrambot.services;
 
 public interface SendMessageImpl<T> {
 
-    void start(T t, boolean check);
-
-    void register(T t);
-
+    void start(T t,String status);
     void aboutUs(T t);
-
     void restart(T t);
-
-    void priceList(T t);
-
     void contactUs(T t);
+    void others(T t) throws Exception;
 
-    void location(T t);
+    void notSubscribed(T t);
 
-    void others(T t);
-
-    void listUser(T t);
 }

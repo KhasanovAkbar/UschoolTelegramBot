@@ -26,23 +26,17 @@ public class BotUserDto {
 
     private Long userId;
 
-    private String username;
+    private String username = "test";
 
-    private String name;
-
-    private String surname;
-
-    private String age;
-
-    private String phoneNumber;
-
-    private String state;
+    private String name = "name";
 
     private String status;
 
-    private String registrationTime;
+    private boolean hasVideo;
 
-    private String userStateLayer;
+    private String cinemaId;
+
+    private String registrationTime;
 
     public BotUserDto(BotUser botUser) {
         BeanUtils.copyProperties(botUser, this);
@@ -54,7 +48,7 @@ public class BotUserDto {
         return botUser;
     }
 
-    public static List<BotUser> toDomain(List<BotUserDto> botUserDtos){
+    public static List<BotUser> toDomain(List<BotUserDto> botUserDtos) {
         return botUserDtos.stream().map(BotUserDto::toDomain).collect(Collectors.toList());
     }
 }

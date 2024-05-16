@@ -5,25 +5,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class BotUser {
+public class Cinema {
+    //
+    private String code;
 
-    private Long userId;
-
-    private String username;
-
-    private String name;
-
-    private boolean hasVideo;
+    private String addedTime;
 
     private String cinemaId;
 
-    private String status;
-
-    private String registrationTime;
-
+    private String videoInfo;
 }

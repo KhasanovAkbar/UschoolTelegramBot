@@ -6,15 +6,15 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 
 public interface Processor {
 
-    void executeQuery(Message message, boolean channelCheck);
+    void executeQuery(Message message, String status) throws Exception;
 
-    void executeCallBackQuery(CallbackQuery callbackQuery, boolean channelCheck);
+    void executeCallBackQuery(CallbackQuery callbackQuery, String status);
 
-    default void processor(Update update, boolean channelCheck) {
+    default void processor(Update update, String status) throws Exception {
         if (update.hasMessage()) {
-            executeQuery(update.getMessage(), channelCheck);
+            executeQuery(update.getMessage(), status);
         } else if (update.hasCallbackQuery()) {
-            executeCallBackQuery(update.getCallbackQuery(), channelCheck);
+            executeCallBackQuery(update.getCallbackQuery(), status);
         }
     }
 }

@@ -8,27 +8,27 @@ import univ.tuit.uschooltelegrambot.domain.BotUser;
 import univ.tuit.uschooltelegrambot.store.dto.BotUserDto;
 import univ.tuit.uschooltelegrambot.store.repo.UserRepository;
 
-import java.util.*;
+import java.util.List;
 
 @Component
 @Repository
-public class BotUserStoreLogic implements BotUserStore<BotUser> {
+public class BotUserStoreLogic implements BotUserStore {
 
     @Autowired
     UserRepository userRepository;
 
     @Override
-    public BotUser add(BotUser botUser) {
+    public BotUserDto add(BotUser botUser) {
         BotUserDto save;
         if (userRepository.existsByUserId(botUser.getUserId())) {
             BotUserDto byUserId = userRepository.findByUserId(botUser.getUserId());
             Integer id = byUserId.getId();
             BeanUtils.copyProperties(botUser, byUserId);
             byUserId.setId(id);
-            return userRepository.save(byUserId).toDomain();
+            return userRepository.save(byUserId);
         } else
             save = new BotUserDto(botUser);
-        return userRepository.save(save).toDomain();
+        return userRepository.save(save);
 
     }
 
@@ -45,8 +45,8 @@ public class BotUserStoreLogic implements BotUserStore<BotUser> {
     }*/
 
     @Override
-    public BotUser findBy(Long id) {
-        return userRepository.findByUserId(id).toDomain();
+    public BotUserDto findBy(Long id) {
+        return userRepository.findByUserId(id);
     }
 
     @Override
