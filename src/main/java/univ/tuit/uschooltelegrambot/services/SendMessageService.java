@@ -174,10 +174,9 @@ public class SendMessageService implements SendMessageImpl<Message> {
         long chat_id = message.getChatId();
 
         messageSender.sendMessage(SendMessage.builder().text(
-                        "<b>Contact numbers - 123456789\n" +
-                                "Telegram - \n" +
-                                "Facebook - \n" +
-                                "Instagram - </b>")
+                                "Bot va kanal egasi\n" +
+                                        "Telegram - @Khayitboy_off\n"
+                               )
                 .parseMode("HTML")
                 .chatId(String.valueOf(chat_id)).build());
 
