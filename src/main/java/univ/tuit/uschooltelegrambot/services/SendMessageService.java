@@ -43,9 +43,6 @@ public class SendMessageService implements SendMessageImpl<Message> {
     private Long userId;
     private final BotUser user = new BotUser();
 
-    @Value("${channel.id}")
-    private String channelId;
-
     public SendMessageService(BotMain botMain, MessageSender messageSender, BotUserStore botUserStore, CinemaStore cinemaStore) {
         this.botMain = botMain;
         this.messageSender = messageSender;

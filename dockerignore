@@ -1,6 +1,0 @@
-target/
-build/
-*.md
-*.git
-Dockerfile
-docker-compose.yml
