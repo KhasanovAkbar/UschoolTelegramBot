@@ -58,9 +58,6 @@ public class MessageHandler implements Handler<Message> {
                 }
             } else if (status.equals("administrator") || status.equals("creator")) {
 
-                if (message.hasVideo()) {
-                    sendMessageAdminService.others(message);
-                }
                 switch (message.getText()) {
                     case ButtonState.START:
                         sendMessageAdminService.start(message);
@@ -85,6 +82,11 @@ public class MessageHandler implements Handler<Message> {
                 }
             } else {
                 sendMessageService.notSubscribed(message);
+            }
+        }
+        if (message.hasVideo()) {
+            if (status.equals("administrator") || status.equals("creator")) {
+                sendMessageAdminService.others(message);
             }
         }
     }

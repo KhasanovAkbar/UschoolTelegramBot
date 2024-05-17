@@ -177,20 +177,6 @@ public class SendMessageAdminService implements SendMessageAdminImpl<Message> {
 
     }
 
-    private static String extractTextUntilNextLine(String text, String tag) {
-        int startIndex = text.indexOf(tag);
-        if (startIndex != -1) {
-            int valueStartIndex = startIndex + tag.length();
-            int valueEndIndex = text.indexOf('\n', valueStartIndex);
-            if (valueEndIndex == -1) {
-                valueEndIndex = text.length();
-            }
-            return text.substring(valueStartIndex, valueEndIndex).trim();
-        } else {
-            return "Not found.";
-        }
-    }
-
 
     private ReplyKeyboardMarkup buttons() {
         //
